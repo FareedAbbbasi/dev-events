@@ -1,5 +1,4 @@
 'use client';
-
 import { useRef, useEffect } from "react";
 import EventCard from "@/components/EventCard";
 import ExploreBtn from "@/components/ExploreBtn";
@@ -38,7 +37,7 @@ const Home = () => {
             <p className="text-center mt-5">Hackathons, Meetups, and Conferences, All in One Place</p>
 
             <ExploreBtn />
-
+        
             <div ref={featuredEventsRef} id="events" className="mt-20 space-y-7">
                 <h3>Featured Events</h3>
 

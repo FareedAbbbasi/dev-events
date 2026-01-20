@@ -1,5 +1,4 @@
 # PostHog post-wizard report
-
 The wizard has completed a deep integration of your Next.js App Router project with PostHog analytics. The integration uses the modern `instrumentation-client.ts` approach (recommended for Next.js 15.3+) with a reverse proxy setup to improve tracking reliability and avoid ad blockers.
 
 ## Events Instrumented
