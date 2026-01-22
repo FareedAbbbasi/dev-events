@@ -1,35 +1,25 @@
-'use client';
-import { useRef, useEffect } from "react";
 import EventCard from "@/components/EventCard";
 import ExploreBtn from "@/components/ExploreBtn";
-import events from "@/lib/constants";
-import posthog from "posthog-js";
+import { IEvent } from "@/database";
+import { cacheLife } from "next/cache";
 
-const Home = () => {
-    const featuredEventsRef = useRef<HTMLDivElement>(null);
-    const hasTrackedView = useRef(false);
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
-    useEffect(() => {
-        const observer = new IntersectionObserver(
-            (entries) => {
-                entries.forEach((entry) => {
-                    if (entry.isIntersecting && !hasTrackedView.current) {
-                        hasTrackedView.current = true;
-                        posthog.capture('featured_events_viewed', {
-                            events_count: events.length,
-                        });
-                    }
-                });
-            },
-            { threshold: 0.1 }
-        );
-
-        if (featuredEventsRef.current) {
-            observer.observe(featuredEventsRef.current);
+const Page = async () => {
+    'use cache';
+    cacheLife('hours')
+    let events: IEvent[] = [];
+    try {
+        const response = await fetch(`${BASE_URL}/api/events`);
+        if (!response.ok) {
+            console.error(`Failed to fetch events: ${response.status}`);
+        } else {
+            const data = await response.json();
+            events = data.events ?? [];
         }
-
-        return () => observer.disconnect();
-    }, []);
+    } catch (error) {
+        console.error('Error fetching events:', error);
+    }
 
     return (
         <section>
@@ -38,12 +28,12 @@ const Home = () => {
 
             <ExploreBtn />
         
-            <div ref={featuredEventsRef} id="events" className="mt-20 space-y-7">
+            <div id="events" className="mt-20 space-y-7">
                 <h3>Featured Events</h3>
 
                 <ul className="events">
-                    {events.map((event) => (
-                        <li key={event.title} className="list-none">
+                    {events && events.length > 0 && events.map((event: IEvent) => (
+                        <li key={event._id?.toString() ?? event.title} className="list-none">
                             <EventCard {...event} />
                         </li>
                     ))}
@@ -54,4 +44,4 @@ const Home = () => {
     );
 }
 
-export default Home;
+export default Page;
