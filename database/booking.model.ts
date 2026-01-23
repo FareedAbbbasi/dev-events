@@ -7,6 +7,7 @@ import Event from './event.model';
 export interface IBooking extends Document {
   eventId: Types.ObjectId;
   email: string;
+  slug: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -21,6 +22,7 @@ const BookingSchema = new Schema<IBooking>(
       ref: 'Event',
       required: [true, 'Event ID is required'],
     },
+
     email: {
       type: String,
       required: [true, 'Email is required'],
@@ -28,11 +30,16 @@ const BookingSchema = new Schema<IBooking>(
       trim: true,
       validate: {
         validator: function (v: string) {
-          // RFC 5322 compliant email validation regex
           return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v);
         },
         message: 'Please provide a valid email address',
       },
+    },
+
+    slug: {
+      type: String,
+      required: [true, 'Slug is required'],
+      trim: true,
     },
   },
   {
@@ -41,35 +48,31 @@ const BookingSchema = new Schema<IBooking>(
 );
 
 /**
- * Pre-save hook to verify that the referenced event exists
- * Prevents orphaned bookings for non-existent events
+ * Pre-save hook (Mongoose v7 compatible)
+ * Verifies that the referenced event exists
  */
-BookingSchema.pre('save', async function (next) {
-  // Only verify if eventId is new or modified
-  if (this.isModified('eventId')) {
-    try {
-      const eventExists = await Event.findById(this.eventId);
-      
-      if (!eventExists) {
-        throw new Error(
-          `Event with ID ${this.eventId} does not exist. Cannot create booking.`
-        );
-      }
-    } catch (error) {
-      return next(error as Error);
-    }
+BookingSchema.pre('save', async function () {
+  // Only check when eventId is new or modified
+  if (!this.isModified('eventId')) return;
+
+  const eventExists = await Event.findById(this.eventId);
+
+  if (!eventExists) {
+    throw new Error(
+      `Event with ID ${this.eventId.toString()} does not exist. Cannot create booking.`
+    );
   }
-  
-  next();
 });
 
-// Create index on eventId for faster queries
+/**
+ * Indexes
+ */
 BookingSchema.index({ eventId: 1 });
-
-// Compound index for eventId and email to prevent duplicate bookings
 BookingSchema.index({ eventId: 1, email: 1 }, { unique: true });
 
-// Export model or use existing model to prevent OverwriteModelError
+/**
+ * Export model (prevents OverwriteModelError)
+ */
 const Booking: Model<IBooking> =
   mongoose.models.Booking ||
   mongoose.model<IBooking>('Booking', BookingSchema);

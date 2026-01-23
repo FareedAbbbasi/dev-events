@@ -4,6 +4,7 @@ import BookEvent from "@/components/BookEvent";
 import { getSimilarEventsBySlug } from "@/lib/actions/event.actions";
 import EventCard from "./EventCard";
 import { IEvent } from "@/database";
+import { cacheLife } from "next/cache";
 
 const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL;
 
@@ -35,11 +36,35 @@ const EventTags = ({ tags }: { tags: string[] }) => (
 )
 
 const EventDetails = async ({ params }: { params: Promise<{ slug: string }> }) => {
+    'use cache'
+    cacheLife('hours');
     const { slug } = await params;
-    const request = await fetch(`${BASE_URL}/api/events/${slug}`);
-    const { data } = await request.json();
+    let event;
 
-    const { description, image, overview, date, time, location, mode, agenda, audience, tags, organizer } = data;
+    try {
+        const request = await fetch(`${BASE_URL}/api/events/${slug}`, {
+            next: { revalidate: 60 }
+        });
+
+        if (!request.ok) {
+            if (request.status === 404) {
+                return notFound();
+            }
+            throw new Error(`Failed to fetch event: ${request.statusText}`);
+        }
+
+        const response = await request.json();
+        event = response.data;
+
+        if (!event) {
+            return notFound();
+        }
+    } catch (error) {
+         console.error('Error fetching event:', error);
+        return notFound();
+    }
+
+    const { description, image, overview, date, time, location, mode, agenda, audience, tags, organizer } = event;
 
     const bookings = 10;
 
@@ -75,33 +100,35 @@ const EventDetails = async ({ params }: { params: Promise<{ slug: string }> }) =
 
                     </section>
 
-                    {agenda && agenda.length > 0 && <EventAgenda agendaItems={ agenda } />}
+                    {agenda && agenda.length > 0 && <EventAgenda agendaItems={agenda} />}
 
                     <section className="flex-col-gap-2">
                         <h2>About the Organizer</h2>
                         <p>{organizer}</p>
                     </section>
 
-                    {tags && tags.length > 0 && <EventTags tags={ tags } />}
+                    {tags && tags.length > 0 && <EventTags tags={tags} />}
 
                 </div>
-            
-            {/*    Right Side - Booking Form */}
-            <aside className="booking">
-                <div className="signup-card">
-                    <h2>Book Your Spot</h2>
-                    {bookings > 0 ? (
-                        <p className="text-sm">
-                            Join {bookings} people who have already booked their spot!
-                        </p>
-                    ) : (
-                        <p className="text-sm">Be the first to book your spot!</p>
-                    )}
 
-                    <BookEvent />
+                {/*    Right Side - Booking Form */}
+                <aside className="booking">
+                    <div className="signup-card">
+                        <h2>Book Your Spot</h2>
+                        {bookings > 0 ? (
+                            <p className="text-sm">
+                                Join {bookings} people who have already booked their spot!
+                            </p>
+                        ) : (
+                            <p className="text-sm">Be the first to book your spot!</p>
+                        )}
 
-                </div>
-            </aside>
+                        <BookEvent eventId={event._id} slug={event.slug} />
+
+                    </div>
+
+                </aside>
+
             </div>
 
             <div className="flex w-full flex-col gap-4 pt-20">
