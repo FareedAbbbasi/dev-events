@@ -47,10 +47,9 @@ export async function POST(req: NextRequest) {
     const uploadResult = await new Promise((resolve, reject) => {
       cloudinary.uploader
         .upload_stream(
-          { resource_type: "image", folder: "DevEvent" },
+          {resource_type: "image", folder: "DevEvent" },
           (error, results) => {
             if (error) return reject(error);
-
             resolve(results);
           },
         )
@@ -84,7 +83,7 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     await connectDB();
-    const events = await Event.find().sort({ createdAt: -1 });
+    const events = await Event.find().sort({ createdAt: -1 }).lean();
 
     return NextResponse.json(
       { message: "Events fetched successfully", events },
