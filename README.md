@@ -14,7 +14,7 @@ A full-stack event management website built with **Next.js** and **TypeScript**,
 
 ### Event Details and booking
 ![Booking Form](./assets/EventDetails01.png)
-![Booking Form](./assets/eventDetails-02.png.png)
+![Booking Form](./assets/eventDetails-02.png)
 *Simple and intuitive email-based booking system for event registration*
 
 ### Similar Events
@@ -22,7 +22,7 @@ A full-stack event management website built with **Next.js** and **TypeScript**,
 *Discover related events based on category and interests*
 
 ### Full Platform Preview
-![Platform Overview](./)
+![Platform Overview](./assets/home.png)
 *Complete user experience across all features*
 
 ## ✨ Features
